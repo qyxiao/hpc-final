@@ -19,6 +19,29 @@ double* exactVorticity(double L, double miu, double* xMatrix, double* yMatrix, d
 }
 
 
+double* exactU (double L, double miu, double* xMatrix, double* yMatrix, double v0, int xLength, int yLength, double t){
+    double* ans = (double *) malloc(sizeof(double)*xLength*yLength);
+    int i,j;
+    for(i=0;i<xLength;i++){
+        for(j=0;j<yLength;j++){
+            ans[i*yLength+j] = v0 - 2*exp(-8*pi*pi*miu*t/(L*L))*cos((xMatrix[i]-v0*t)*2*pi/L)*sin((yMatrix[j]-v0*t)*2*pi/L);
+        }
+    }
+    return ans;
+} 
+
+double* exactV (double L, double miu, double* xMatrix, double* yMatrix, double v0, int xLength, int yLength, double t){
+    double* ans = (double *) malloc(sizeof(double)*xLength*yLength);
+    int i,j;
+    for(i=0;i<xLength;i++){
+        for(j=0;j<yLength;j++){
+            ans[i*yLength+j] = v0 + 2*exp(-8*pi*pi*miu*t/(L*L))*sin((xMatrix[i]-v0*t)*2*pi/L)*cos((yMatrix[j]-v0*t)*2*pi/L);
+        }
+    }
+    return ans;
+} 
+
+
 int main(int argc, char* argv[])
 {
     int i,j;
@@ -60,17 +83,19 @@ int main(int argc, char* argv[])
     } 
 
     double* vorticity = exactVorticity(L, miu, xMatrix, yMatrix, v0, xLength, yLength, t);
-	
+	double* initialU = exactU(L, miu, xMatrix, yMatrix, v0, xLength, yLength, 1);
+    double* initialV = exactV(L, miu, xMatrix, yMatrix, v0, xLength, yLength, 2);
+
     FILE* fd = NULL;
     char filename[256];
     snprintf(filename, 256, "outputTest.txt");
     fd = fopen(filename,"w+");
     for(i = 0; i < xLength; i++)
-      fprintf(fd, "  %f\n", vorticity[i]);
+      fprintf(fd, "  %f\n", initialU[i]);
       
-    for(i = 0; i < yLength; i++)
+    for(i = 0; i < xLength; i++)
       // fprintf(fd, "%d %11.7f %11.7f\n", i, creal(out[i]), cimag(out[i]));
-      fprintf(fd, "  %f\n", KY[i]);
+      fprintf(fd, "  %f\n", initialV[i*yLength]);
     fclose(fd);
 
 
