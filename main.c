@@ -38,14 +38,26 @@ int main(int argc, char* argv[])
 	// }
 	// fftw_execute(plan); //Execution of FFT
     double* xMatrix = (double *) malloc(sizeof(double)*xLength);
+    double* KX = (double *) malloc(sizeof(double)*xLength);
     double* yMatrix = (double *) malloc(sizeof(double)*yLength);
-    for(i=0; i<xLength; i++){
-    	xMatrix[i]=i*dx;
+    double* KY = (double *) malloc(sizeof(double)*yLength);
+    
+    for(i=0; i<(xLength+1)/2; i++){
+        KX[i]=i*2*pi/L;
+        xMatrix[i]=i*dx;
     }
-    for(i=0; i<yLength; i++){
-    	yMatrix[i]=i*dy;
+    for(i=(xLength+1)/2; i<xLength; i++){
+        KX[i]=(i-xLength)*2*pi/L;
+        xMatrix[i]=i*dx;
+    }
+    for(i=0; i<(yLength+1)/2; i++){
+        KY[i]=i*2*pi/L;
+        yMatrix[i]=i*dy;
+    }
+    for(i=(yLength+1)/2; i<yLength; i++){
+        KY[i]=(i-yLength)*2*pi/L;
+        yMatrix[i]=i*dy;
     } 
-   
 
     double* vorticity = exactVorticity(L, miu, xMatrix, yMatrix, v0, xLength, yLength, t);
 	
@@ -53,9 +65,12 @@ int main(int argc, char* argv[])
     char filename[256];
     snprintf(filename, 256, "outputTest.txt");
     fd = fopen(filename,"w+");
-    for(i = 0; i < xLength*yLength; i++)
-      // fprintf(fd, "%d %11.7f %11.7f\n", i, creal(out[i]), cimag(out[i]));
+    for(i = 0; i < xLength; i++)
       fprintf(fd, "  %f\n", vorticity[i]);
+      
+    for(i = 0; i < yLength; i++)
+      // fprintf(fd, "%d %11.7f %11.7f\n", i, creal(out[i]), cimag(out[i]));
+      fprintf(fd, "  %f\n", KY[i]);
     fclose(fd);
 
 
