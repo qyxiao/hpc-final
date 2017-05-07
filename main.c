@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     fftw_execute(planVor); //Execution of FFT
     for(i=0;i<xLength;i++){
         for(j=0;j<yLength;j++){
-            stream[i*yLength+j] = vorticityCom[i*yLength+j]/sqrt(KX[i]*KX[i]+KY[j]*KY[j]);
+            stream[i*yLength+j] = vorticityCom[i*yLength+j]/(KX[i]*KX[i]+KY[j]*KY[j]);
         }
     }
     stream[0] = vorticityCom[i*yLength+j];
@@ -171,11 +171,12 @@ int main(int argc, char* argv[])
 
     fftw_execute(planInvU); //Execution of IFFT
     fftw_execute(planInvV); //Execution of IFFT
-    
+    fftw_execute(planInvVortiX);
+    fftw_execute(planInvVortiY);
 
     for(i=0;i<xLength;i++){
         for(j=0;j<yLength;j++){
-            Nflux[i*yLength+j] = vortiX[i*yLength+j]*Uvel[i*yLength+j] + vortiY[i*yLength+j]*Vvel[i*yLength+j] ;
+            Nflux[i*yLength+j] = vortiX[i*yLength+j]*(Uvel[i*yLength+j]*fftDefactor+1) + vortiY[i*yLength+j]*(Vvel[i*yLength+j]*fftDefactor+1) ;
             Nflux[i*yLength+j] = Nflux[i*yLength+j]*fftDefactor;
         }
     }
@@ -190,11 +191,11 @@ int main(int argc, char* argv[])
     char filename[256];
     snprintf(filename, 256, "outputTest.txt");
     fd = fopen(filename,"w+");
-    fprintf(fd,"timestep: %f",dt);
+    fprintf(fd,"timestep: %f\n",dt);
     for(i = 0; i < xLength*yLength; i++)
     {
         //fprintf(fd, "%d\n", i);
-        fprintf(fd, "%d %11.7f %11.7f\n", i, creal(Uvel[i]), cimag(Uvel[i]));
+        fprintf(fd, "%d %11.7f %11.7f\n", i, creal(Nflux[i]), cimag(Nflux[i]));
         //fprintf(fd, "%d %f \n", i, vorticity[i]);
     }
     for(i = 0; i < xLength*yLength; i++)
