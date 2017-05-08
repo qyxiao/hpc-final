@@ -6,24 +6,9 @@
 #include<fftw3.h>
 
 
-
-
-double* exactVorticity(int xLength, int yLength){
-    double* ans = (double *) malloc(sizeof(double)*xLength*yLength);
-    int i,j;
-    for(i=0;i<xLength;i++){
-    	for(j=0;j<yLength;j++){
-    		ans[i*yLength+j] = i*yLength+j;
-    	}
-    }
-    return ans;
-}
-
-
-
 int main(int argc, char* argv[])
 {
-    int i=0;
+    int i=0,j;
 	int Npoints = 16;
 	int n0 = sqrt(Npoints),n1 = sqrt(Npoints);
 	fftw_complex  *in, *out, *LastIn;
@@ -53,14 +38,8 @@ int main(int argc, char* argv[])
     for(i = 0; i < Npoints; i++)
     {
         //fprintf(fd, "%d\n", i);
-        fprintf(fd, "%d %11.7f %11.7f\n", i, creal(out[i]), cimag(out[i]));
+        fprintf(fd, "%11.7f %11.7f\n", creal(out[i]), cimag(out[i]));
         //fprintf(fd, "%d %f \n", i, vorticity[i]);
-    }
-    for(i = 0; i < Npoints; i++)
-    {
-        //fprintf(fd, "%d\n", i);
-        //fprintf(fd, "%d %11.7f %11.7f\n", i, creal(vorticityCom[i]), cimag(vorticityCom[i]));
-        fprintf(fd, "%d %f \n", i, in[i]);
     }
     fclose(fd);
 
