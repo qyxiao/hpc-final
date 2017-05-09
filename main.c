@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     double fftDefactor = 1.0/(xLength*yLength);
 	fftw_complex *vorticity, *Uvel, *Vvel, *vortiX, *vortiY, *Nflux, *stream; 
     fftw_complex *xMatrix, *yMatrix, *KX, *KY;
-    fftw_complex *vorticityCom, *UvelCom, *VvelCom, *vortiXCom, *vortiYCom, *NfluxCom, *vorticityComNew;
+    fftw_complex *vorticityCom, *UvelCom, *VvelCom, *vortiXCom, *vortiYCom, *NfluxCom, *NfluxComOld,*vorticityComNew;
 	fftw_plan planVor, planInvVor, planU, planInvU, planV, planInvV, planInvVortiX, planInvVortiY, planN;
 
 	   
@@ -142,8 +142,7 @@ int main(int argc, char* argv[])
     planInvVortiX = fftw_plan_dft_2d(xLength, yLength, vortiXCom, vortiX, FFTW_BACKWARD, FFTW_ESTIMATE);
     planInvVortiY = fftw_plan_dft_2d(xLength, yLength, vortiYCom, vortiY, FFTW_BACKWARD, FFTW_ESTIMATE);
 
-    planN = fftw_plan_dft_2d(xLength, yLength, Nflux, NfluxCom, FFTW_FORWARD, FFTW_ESTIMATE);
-
+    
 
     
     fftw_execute(planVor); //Execution of FFT
@@ -182,10 +181,18 @@ int main(int argc, char* argv[])
                 Nflux[i*yLength+j] = Nflux[i*yLength+j]*fftDefactor;
             }
         }
-        
-        fftw_execute(planN); 
 
-        vorticityComNew = CNfun(vorticityCom,NfluxCom,miu,KX,KY,xLength,yLength,dt);
+        planN = fftw_plan_dft_2d(xLength, yLength, Nflux, NfluxCom, FFTW_FORWARD, FFTW_ESTIMATE);
+        fftw_execute(planN);
+        fftw_destroy_plan(planN); 
+        if(iter==0){
+            vorticityComNew = CNfun(vorticityCom,NfluxCom,miu,KX,KY,xLength,yLength,dt);
+        }else{
+            vorticityComNew = CNfun_AB(vorticityCom,NfluxCom,NfluxComOld,miu,KX,KY,xLength,yLength,dt);
+        }
+
+        NfluxComOld = NfluxCom;
+        NfluxCom = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*xLength*yLength);
 
         vorticityCom = vorticityComNew;
         iter++;
@@ -219,7 +226,7 @@ int main(int argc, char* argv[])
     fftw_free(xMatrix); fftw_free(yMatrix); fftw_free(KX); fftw_free(KY); fftw_free(stream);
 
 	fftw_destroy_plan(planVor); fftw_destroy_plan(planInvVor); fftw_destroy_plan(planU); fftw_destroy_plan(planV);
-    fftw_destroy_plan(planInvVortiX); fftw_destroy_plan(planInvVortiY); fftw_destroy_plan(planN);
+    fftw_destroy_plan(planInvVortiX); fftw_destroy_plan(planInvVortiY); 
 
 	fftw_free(vorticityCom); fftw_free(UvelCom); fftw_free(VvelCom); fftw_free(vortiXCom); fftw_free(vortiYCom);
     fftw_free(NfluxCom);      	
