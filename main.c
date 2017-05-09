@@ -78,7 +78,7 @@ fftw_complex* CNfun_AB(fftw_complex* vortiCom, fftw_complex* NfluxCom, fftw_comp
 
 int main(int argc, char* argv[])
 {
-    int i,j;
+    int i,j, iter, maxIter;
 	int Npoints = 16;
 	int xLength = Npoints, yLength = Npoints;
 	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 1.0/64;
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
         yMatrix[i]=i*dy;
     } 
 
-
+    iter = 0; maxIter = 3;
     vorticity = exactVorticity(L, miu, xMatrix, yMatrix, v0, xLength, yLength, t);
     stream = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*xLength*yLength);
 	// Uvel = exactU(L, miu, xMatrix, yMatrix, v0, xLength, yLength, t);
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
     // planVor = fftw_plan_dft_2d(xLength, yLength, vorticity, vorticityCom, FFTW_FORWARD, FFTW_ESTIMATE);
     // planInvVor = fftw_plan_dft_2d(xLength, yLength, vorticity, vorticityCom, FFTW_BACKWARD, FFTW_ESTIMATE);
     planVor = fftw_plan_dft_2d(xLength, yLength, vorticity, vorticityCom, FFTW_FORWARD, FFTW_ESTIMATE);
-    planInvVor = fftw_plan_dft_2d(xLength, yLength, vorticityCom, vorticity, FFTW_BACKWARD, FFTW_ESTIMATE);
+    //planInvVor = fftw_plan_dft_2d(xLength, yLength, vorticityComNew, vorticity, FFTW_BACKWARD, FFTW_ESTIMATE);
     planU = fftw_plan_dft_2d(xLength, yLength, Uvel, UvelCom, FFTW_FORWARD, FFTW_ESTIMATE);
     planInvU = fftw_plan_dft_2d(xLength, yLength, UvelCom, Uvel, FFTW_BACKWARD, FFTW_ESTIMATE);    
     planV = fftw_plan_dft_2d(xLength, yLength, Vvel, VvelCom, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -147,44 +147,52 @@ int main(int argc, char* argv[])
 
     
     fftw_execute(planVor); //Execution of FFT
-    for(i=0;i<xLength;i++){
-        for(j=0;j<yLength;j++){
-            stream[i*yLength+j] = vorticityCom[i*yLength+j]/(KX[i]*KX[i]+KY[j]*KY[j]);
+
+    while(iter<maxIter){
+        for(i=0;i<xLength;i++){
+            for(j=0;j<yLength;j++){
+                stream[i*yLength+j] = vorticityCom[i*yLength+j]/(KX[i]*KX[i]+KY[j]*KY[j]);
+            }
         }
-    }
-    stream[0] = vorticityCom[i*yLength+j];
+        stream[0] = vorticityCom[i*yLength+j];
 
-    for(i=0;i<xLength;i++){
-        for(j=0;j<yLength;j++){
-            UvelCom[i*yLength+j] = stream[i*yLength+j]*I*KY[j];
-            VvelCom[i*yLength+j] = -1*stream[i*yLength+j]*I*KX[i];
+        for(i=0;i<xLength;i++){
+            for(j=0;j<yLength;j++){
+                UvelCom[i*yLength+j] = stream[i*yLength+j]*I*KY[j];
+                VvelCom[i*yLength+j] = -1*stream[i*yLength+j]*I*KX[i];
+            }
         }
-    }
 
 
-    for(i=0;i<xLength;i++){
-        for(j=0;j<yLength;j++){
-            vortiXCom[i*yLength+j] = I*KX[i]* vorticityCom[i*yLength+j];
-            vortiYCom[i*yLength+j] = I*KY[j]* vorticityCom[i*yLength+j];
+        for(i=0;i<xLength;i++){
+            for(j=0;j<yLength;j++){
+                vortiXCom[i*yLength+j] = I*KX[i]* vorticityCom[i*yLength+j];
+                vortiYCom[i*yLength+j] = I*KY[j]* vorticityCom[i*yLength+j];
+            }
         }
-    }
 
-    fftw_execute(planInvU); //Execution of IFFT
-    fftw_execute(planInvV); //Execution of IFFT
-    fftw_execute(planInvVortiX);
-    fftw_execute(planInvVortiY);
+        fftw_execute(planInvU); //Execution of IFFT
+        fftw_execute(planInvV); //Execution of IFFT
+        fftw_execute(planInvVortiX);
+        fftw_execute(planInvVortiY);
 
-    for(i=0;i<xLength;i++){
-        for(j=0;j<yLength;j++){
-            Nflux[i*yLength+j] = vortiX[i*yLength+j]*(Uvel[i*yLength+j]*fftDefactor+1) + vortiY[i*yLength+j]*(Vvel[i*yLength+j]*fftDefactor+1) ;
-            Nflux[i*yLength+j] = Nflux[i*yLength+j]*fftDefactor;
+        for(i=0;i<xLength;i++){
+            for(j=0;j<yLength;j++){
+                Nflux[i*yLength+j] = vortiX[i*yLength+j]*(Uvel[i*yLength+j]*fftDefactor+1) + vortiY[i*yLength+j]*(Vvel[i*yLength+j]*fftDefactor+1) ;
+                Nflux[i*yLength+j] = Nflux[i*yLength+j]*fftDefactor;
+            }
         }
-    }
-   
-    fftw_execute(planN); 
+        
+        fftw_execute(planN); 
 
-    vorticityComNew = CNfun(vorticityCom,NfluxCom,miu,KX,KY,xLength,yLength,dt);
-   
+        vorticityComNew = CNfun(vorticityCom,NfluxCom,miu,KX,KY,xLength,yLength,dt);
+
+        vorticityCom = vorticityComNew;
+        iter++;
+    }
+    
+    planInvVor = fftw_plan_dft_2d(xLength, yLength, vorticityComNew, vorticity, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_execute(planInvVor);
 
     
     FILE* fd = NULL;
@@ -195,13 +203,13 @@ int main(int argc, char* argv[])
     for(i = 0; i < xLength*yLength; i++)
     {
         //fprintf(fd, "%d\n", i);
-        fprintf(fd, "%d %11.7f %11.7f\n", i, creal(Nflux[i]), cimag(Nflux[i]));
+        fprintf(fd, "%d %11.7f %11.7f\n", i, creal(vorticityComNew[i]), cimag(vorticityComNew[i]));
         //fprintf(fd, "%d %f \n", i, vorticity[i]);
     }
     for(i = 0; i < xLength*yLength; i++)
     {
         //fprintf(fd, "%d\n", i);
-        fprintf(fd, "%d %11.7f %11.7f\n", i, creal(vorticityComNew[i]), cimag(vorticityComNew[i]));
+        fprintf(fd, "%d %11.7f %11.7f\n", i, fftDefactor*creal(vorticity[i]), fftDefactor*cimag(vorticity[i]));
         //fprintf(fd, "%d %f \n", i, Nflux[i]);
     }
         
