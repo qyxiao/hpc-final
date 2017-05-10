@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include <stddef.h> 
 #include <stdint.h>
+#include "util.h"
 #include<math.h>
 #include<complex.h>
 #include<time.h>
@@ -57,10 +58,10 @@ void CNfun_AB(fftw_complex* vortiCom, fftw_complex* NfluxCom, fftw_complex* Nflu
 int main(int argc, char* argv[])
 {
     int iter, maxIter, mpirank;
-	int Npoints = 16;
+	int Npoints = 32;
     ptrdiff_t alloc_local, local_n0, local_0_start, i, j, xLength=Npoints, yLength=Npoints, preIndex;
 
-	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 1.0/64;
+	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 4.0*dx*dy; //1.0/64;
     double fftDefactor = 1.0/(xLength*yLength);
 
     MPI_Init(&argc, &argv);
@@ -68,6 +69,8 @@ int main(int argc, char* argv[])
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 	
+    timestamp_type time1, time2;   // time test
+    get_timestamp(&time1);
 
     fftw_complex *xMatrix, *yMatrix, *KX, *KY;
     fftw_complex *vorticity, *Uvel, *Vvel, *vortiX, *vortiY, *Nflux, *stream; 
@@ -197,15 +200,21 @@ int main(int argc, char* argv[])
     }
 
     fclose(fd);
-    
- //    fftw_free(vorticity); fftw_free(Uvel); fftw_free(Vvel); fftw_free(vortiX); fftw_free(vortiY); fftw_free(Nflux); 
- //    fftw_free(xMatrix); fftw_free(yMatrix); fftw_free(KX); fftw_free(KY); fftw_free(stream);
+    fftw_free(vorticity); fftw_free(stream); //fftw_free(vorticityCom); 
+    // fftw_free(Uvel); fftw_free(Vvel); fftw_free(vortiX); fftw_free(vortiY); fftw_free(Nflux); 
+    // fftw_free(xMatrix); fftw_free(yMatrix); fftw_free(KX); fftw_free(KY); 
 
-	// fftw_destroy_plan(planVor); fftw_destroy_plan(planInvVor); 
- //    fftw_destroy_plan(planInvVortiX); fftw_destroy_plan(planInvVortiY); 
+	fftw_destroy_plan(planVor); fftw_destroy_plan(planInvU); fftw_destroy_plan(planInvV); 
+    fftw_destroy_plan(planInvVortiX); fftw_destroy_plan(planInvVortiY); 
 
-	// fftw_free(vorticityCom); fftw_free(UvelCom); fftw_free(VvelCom); fftw_free(vortiXCom); fftw_free(vortiYCom);
+	// fftw_free(UvelCom); fftw_free(VvelCom); fftw_free(vortiXCom); fftw_free(vortiYCom);
  //    fftw_free(NfluxCom);    
+
+    get_timestamp(&time2);
+    double elapsed = timestamp_diff_in_seconds(time1,time2);
+    if (0 == mpirank) {
+        printf("Time elapsed is %f seconds.\n", elapsed);
+    }
 
     MPI_Finalize();  	
 	return 0;

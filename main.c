@@ -3,6 +3,7 @@
 #include<math.h>
 #include<complex.h>
 #include<time.h>
+#include "util.h"
 #include<fftw3.h>
 #define pi 3.1415926
 
@@ -81,14 +82,16 @@ int main(int argc, char* argv[])
     int i,j, iter, maxIter;
 	int Npoints = 16;
 	int xLength = Npoints, yLength = Npoints;
-	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 1.0/64;
+	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 4.0*dx*dy;
     double fftDefactor = 1.0/(xLength*yLength);
 	fftw_complex *vorticity, *Uvel, *Vvel, *vortiX, *vortiY, *Nflux, *stream; 
     fftw_complex *xMatrix, *yMatrix, *KX, *KY;
     fftw_complex *vorticityCom, *UvelCom, *VvelCom, *vortiXCom, *vortiYCom, *NfluxCom, *NfluxComOld,*vorticityComNew;
 	fftw_plan planVor, planInvVor, planU, planInvU, planV, planInvV, planInvVortiX, planInvVortiY, planN;
 
-	   
+	timestamp_type time1, time2;   // time test
+    get_timestamp(&time1);
+
 	xMatrix = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*xLength);
     KX = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*xLength);
     yMatrix = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*yLength);
@@ -230,5 +233,10 @@ int main(int argc, char* argv[])
 
 	fftw_free(vorticityCom); fftw_free(UvelCom); fftw_free(VvelCom); fftw_free(vortiXCom); fftw_free(vortiYCom);
     fftw_free(NfluxCom);      	
+
+    get_timestamp(&time2);
+    double elapsed = timestamp_diff_in_seconds(time1,time2);
+    printf("Time elapsed is %f seconds.\n", elapsed);
+
 	return 0;
 }
