@@ -5,19 +5,19 @@ EXECS= main main_omp main_mpi main_mpi_omp
 all: ${EXECS}
 
 main: main.c
-gcc $^  -lfftw3 -lm -lrt -o test1
+	gcc $^  -lfftw3 -lm -lrt -o test1
 
 
 main_omp: main_omp.c
-gcc $^  -lfftw3 -lm -lrt -fopenmp -o test2
+	gcc $^  -lfftw3 -lm -lrt -fopenmp -o test2
 
 
 main_mpi: main_mpi.c
-mpicc -I/home/qx344/qx344/fftwmpi/install/include  $^  -lfftw3_mpi -lfftw3 -lm  -L/home/qx344/qx344/fftwmpi/install/lib -o test3
+	mpicc -I/home/qx344/qx344/fftwmpi/install/include  $^  -lfftw3_mpi -lfftw3 -lm  -L/home/qx344/qx344/fftwmpi/install/lib -o test3
 
 main_mpi_omp: main_mpi.c
-mpicc -I/home/qx344/qx344/fftwmpi/install/include  $^  -lfftw3_mpi -lfftw3 -lm -fopenmp -L/home/qx344/qx344/fftwmpi/install/lib -o test4
+	mpicc -I/home/qx344/qx344/fftwmpi/install/include  $^  -lfftw3_mpi -lfftw3 -lm -fopenmp -L/home/qx344/qx344/fftwmpi/install/lib -o test4
 
 
 clean:
-rm -f ${EXECS}
+	rm -f ${EXECS}
