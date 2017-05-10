@@ -1,9 +1,13 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
+#include "util.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+#include "util.h"
 #include<complex.h>
 #include<time.h>
-#include "util.h"
 #include<fftw3.h>
 #define pi 3.1415926
 
@@ -11,6 +15,7 @@
 fftw_complex* exactVorticity(double L, double miu, fftw_complex* xMatrix, fftw_complex* yMatrix, double v0, int xLength, int yLength, double t){
     fftw_complex* ans = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*xLength*yLength);
     int i,j;
+    #pragma omp parallel for default(none) shared(L,miu,xLength,yLength,ans,xMatrix,yMatrix,v0,t) private(i,j) collapse(2)
     for(i=0;i<xLength;i++){
     	for(j=0;j<yLength;j++){
     		ans[i*yLength+j] = 8*pi/L*exp(-8*pi*pi*miu*t/(L*L))*cos((xMatrix[i]-v0*t)*2*pi/L)*cos((yMatrix[j]-v0*t)*2*pi/L);
@@ -23,6 +28,7 @@ fftw_complex* exactVorticity(double L, double miu, fftw_complex* xMatrix, fftw_c
 fftw_complex* exactU (double L, double miu, fftw_complex* xMatrix, fftw_complex* yMatrix, double v0, int xLength, int yLength, double t){
     fftw_complex* ans = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*xLength*yLength);
     int i,j;
+    #pragma omp parallel for default(none) shared(L,miu,xLength,yLength,ans,xMatrix,yMatrix,v0,t) private(i,j) collapse(2)
     for(i=0;i<xLength;i++){
         for(j=0;j<yLength;j++){
             ans[i*yLength+j] = v0 - 2*exp(-8*pi*pi*miu*t/(L*L))*cos((xMatrix[i]-v0*t)*2*pi/L)*sin((yMatrix[j]-v0*t)*2*pi/L);
@@ -34,6 +40,7 @@ fftw_complex* exactU (double L, double miu, fftw_complex* xMatrix, fftw_complex*
 fftw_complex* exactV (double L, double miu, fftw_complex* xMatrix, fftw_complex* yMatrix, double v0, int xLength, int yLength, double t){
     fftw_complex* ans = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*xLength*yLength);
     int i,j;
+    #pragma omp parallel for default(none) shared(L,miu,xLength,yLength,ans,xMatrix,yMatrix,v0,t) private(i,j) collapse(2)
     for(i=0;i<xLength;i++){
         for(j=0;j<yLength;j++){
             ans[i*yLength+j] = v0 + 2*exp(-8*pi*pi*miu*t/(L*L))*sin((xMatrix[i]-v0*t)*2*pi/L)*cos((yMatrix[j]-v0*t)*2*pi/L);
@@ -47,6 +54,7 @@ fftw_complex* CNfun(fftw_complex* vortiCom, fftw_complex* NfluxCom, double miu, 
     int i,j;
     double factor = -1;
     double timeInv = 1/dt;
+    #pragma omp parallel for default(none) shared(vortiCom,NfluxCom,miu,xLength,yLength,ans,KX,KY,dt,factor,timeInv) private(i,j) collapse(2)
     for(i=0;i<xLength;i++){
         for(j=0;j<yLength;j++){
             double temp = (KX[i]*KX[i]+KY[j]*KY[j])*miu*0.5;
@@ -63,6 +71,7 @@ fftw_complex* CNfun_AB(fftw_complex* vortiCom, fftw_complex* NfluxCom, fftw_comp
     int i,j;
     double factor = -1;
     double timeInv = 1/dt;
+    #pragma omp parallel for default(none) shared(vortiCom,NfluxCom,NfluxComOld,miu,xLength,yLength,ans,KX,KY,dt,factor,timeInv) private(i,j) collapse(2)
     for(i=0;i<xLength;i++){
         for(j=0;j<yLength;j++){
             double temp = (KX[i]*KX[i]+KY[j]*KY[j])*miu*0.5;
@@ -91,9 +100,9 @@ int main(int argc, char* argv[])
     fftw_complex *vorticityCom, *UvelCom, *VvelCom, *vortiXCom, *vortiYCom, *NfluxCom, *NfluxComOld,*vorticityComNew;
 	fftw_plan planVor, planInvVor, planU, planInvU, planV, planInvV, planInvVortiX, planInvVortiY, planN;
 
-	timestamp_type time1, time2;   // time test
+    timestamp_type time1, time2;   // time test
     get_timestamp(&time1);
-
+	   
 	xMatrix = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*xLength);
     KX = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*xLength);
     yMatrix = (fftw_complex *) fftw_malloc(sizeof(fftw_complex)*yLength);
@@ -115,6 +124,7 @@ int main(int argc, char* argv[])
         KY[i]=(i-yLength)*2*pi/L;
         yMatrix[i]=i*dy;
     } 
+
 
     vorticity = exactVorticity(L, miu, xMatrix, yMatrix, v0, xLength, yLength, t);
     stream = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*xLength*yLength);
@@ -152,33 +162,27 @@ int main(int argc, char* argv[])
     fftw_execute(planVor); //Execution of FFT
 
     while(iter<maxIter){
+        #pragma omp parallel for default(none) shared(xLength,yLength,stream,KX,KY,vorticityCom,UvelCom,VvelCom,vortiXCom,vortiYCom) private(i,j) collapse(2)
         for(i=0;i<xLength;i++){
             for(j=0;j<yLength;j++){
                 stream[i*yLength+j] = vorticityCom[i*yLength+j]/(KX[i]*KX[i]+KY[j]*KY[j]);
-            }
-        }
-        stream[0] = vorticityCom[i*yLength+j];
-
-        for(i=0;i<xLength;i++){
-            for(j=0;j<yLength;j++){
                 UvelCom[i*yLength+j] = stream[i*yLength+j]*I*KY[j];
                 VvelCom[i*yLength+j] = -1*stream[i*yLength+j]*I*KX[i];
-            }
-        }
-
-
-        for(i=0;i<xLength;i++){
-            for(j=0;j<yLength;j++){
                 vortiXCom[i*yLength+j] = I*KX[i]* vorticityCom[i*yLength+j];
                 vortiYCom[i*yLength+j] = I*KY[j]* vorticityCom[i*yLength+j];
             }
         }
+        stream[0] = vorticityCom[0];
+        UvelCom[0] = stream[0]*I*KY[0];
+        VvelCom[0] = -1*stream[0]*I*KX[0];
+    
 
         fftw_execute(planInvU); //Execution of IFFT
         fftw_execute(planInvV); //Execution of IFFT
         fftw_execute(planInvVortiX);
         fftw_execute(planInvVortiY);
 
+        #pragma omp parallel for default(none) shared(xLength,yLength,Nflux,vortiX,Uvel,fftDefactor,vortiY,Vvel)  private(i,j) collapse(2)
         for(i=0;i<xLength;i++){
             for(j=0;j<yLength;j++){
                 Nflux[i*yLength+j] = vortiX[i*yLength+j]*(Uvel[i*yLength+j]*fftDefactor+1) + vortiY[i*yLength+j]*(Vvel[i*yLength+j]*fftDefactor+1) ;
@@ -208,7 +212,7 @@ int main(int argc, char* argv[])
     
     FILE* fd = NULL;
     char filename[256];
-    snprintf(filename, 256, "outputTest.txt");
+    snprintf(filename, 256, "outputTestOMP.txt");
     fd = fopen(filename,"w+");
     fprintf(fd,"timestep: %f\n",dt);
     for(i = 0; i < xLength*yLength; i++)
