@@ -1,6 +1,6 @@
 
-Npoints = 16;
-filesNum = 4;
+Npoints = 1024;
+filesNum = 16;
 xLength = Npoints; 
 yLength = Npoints;
 
