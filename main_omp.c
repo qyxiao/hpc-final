@@ -89,7 +89,7 @@ fftw_complex* CNfun_AB(fftw_complex* vortiCom, fftw_complex* NfluxCom, fftw_comp
 int main(int argc, char* argv[])
 {
     int i,j, iter, maxIter;
-	int Npoints = 16;
+	int Npoints = 32;
 	int xLength = Npoints, yLength = Npoints;
 	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 4.0*dx*dy;
     double fftDefactor = 1.0/(xLength*yLength);
@@ -180,6 +180,7 @@ int main(int argc, char* argv[])
         fftw_execute(planInvVortiX);
         fftw_execute(planInvVortiY);
 
+        #pragma omp parallel for default(none) shared(xLength,yLength,Nflux,vortiX,Uvel,fftDefactor,vortiY,Vvel)  private(i,j) collapse(2)
         for(i=0;i<xLength;i++){
             for(j=0;j<yLength;j++){
                 Nflux[i*yLength+j] = vortiX[i*yLength+j]*(Uvel[i*yLength+j]*fftDefactor+1) + vortiY[i*yLength+j]*(Vvel[i*yLength+j]*fftDefactor+1) ;
