@@ -79,8 +79,10 @@ fftw_complex* CNfun_AB(fftw_complex* vortiCom, fftw_complex* NfluxCom, fftw_comp
 
 int main(int argc, char* argv[])
 {
-    int i,j, iter, maxIter;
+    int i,j, iter=0, maxIter=1;
 	int Npoints = 16;
+    if(argc>=2){sscanf(argv[1], "%d", &Npoints);}  
+    if(argc>=3){sscanf(argv[2], "%d", &maxIter);} 
 	int xLength = Npoints, yLength = Npoints;
 	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 4.0*dx*dy;
     double fftDefactor = 1.0/(xLength*yLength);
@@ -114,7 +116,6 @@ int main(int argc, char* argv[])
         yMatrix[i]=i*dy;
     } 
 
-    iter = 0; maxIter = 3;
     vorticity = exactVorticity(L, miu, xMatrix, yMatrix, v0, xLength, yLength, t);
     stream = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*xLength*yLength);
 	// Uvel = exactU(L, miu, xMatrix, yMatrix, v0, xLength, yLength, t);

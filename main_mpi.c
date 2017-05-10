@@ -63,8 +63,11 @@ void CNfun_AB(fftw_complex* vortiCom, fftw_complex* NfluxCom, fftw_complex* Nflu
 
 int main(int argc, char* argv[])
 {
-    int iter, maxIter, mpirank;
-	int Npoints = 32;
+    int iter=0, maxIter=1, mpirank;
+	int Npoints = 16;
+    if(argc>=2){sscanf(argv[1], "%d", &Npoints);}  
+    if(argc>=3){sscanf(argv[2], "%d", &maxIter);} 
+
     ptrdiff_t alloc_local, local_n0, local_0_start, i, j, xLength=Npoints, yLength=Npoints, preIndex;
 
 	double t = 0, miu = 0.05, v0 = 1, L = 1, dx = L/xLength, dy = L/yLength, dt = 4.0*dx*dy; //1.0/64;
@@ -106,7 +109,6 @@ int main(int argc, char* argv[])
         yMatrix[i]=i*dy;
     } 
 
-    iter = 0; maxIter = 3;
     
     alloc_local = fftw_mpi_local_size_2d(xLength, yLength, MPI_COMM_WORLD,
                                          &local_n0, &local_0_start);
