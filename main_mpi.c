@@ -195,11 +195,11 @@ int main(int argc, char* argv[])
     char filename[256];
     snprintf(filename, 256, "outputMPI%d.txt",mpirank);
     fd = fopen(filename,"w+");
-    fprintf(fd,"timestep: %f\n",dt);
+    //fprintf(fd,"timestep: %f\n",dt);
     for(i = 0; i < local_n0*yLength; i++)
     {
         //fprintf(fd, "%d\n", i);
-        fprintf(fd, "%d %11.7f %11.7f\n", i, fftDefactor*creal(vorticity[i]), fftDefactor*cimag(vorticity[i]));
+        fprintf(fd, "%11.7f %11.7f\n", fftDefactor*creal(vorticity[i]), fftDefactor*cimag(vorticity[i]));
         //fprintf(fd, "%d %f \n", i, vorticity[i]);
     }
     for(i = 0; i < local_n0*yLength; i++)
