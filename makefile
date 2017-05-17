@@ -1,5 +1,5 @@
 
-EXECS= main main_omp main_mpi main_mpi_omp
+EXECS= main main_omp main_mpi main_mpi_omp test_time
 
 
 all: ${EXECS}
@@ -18,6 +18,9 @@ main_mpi: main_mpi.c
 main_mpi_omp: main_mpi.c
 	mpicc -I/home/qx344/qx344/fftwmpi/install/include  $^  -lfftw3_mpi -lfftw3 -lm -fopenmp -L/home/qx344/qx344/fftwmpi/install/lib -o test4
 
+
+test_time: timetest.c
+    mpicc -I/home/qx344/qx344/fftwmpi/install/include  $^  -lfftw3_mpi -lfftw3 -lm -fopenmp -L/home/qx344/qx344/fftwmpi/install/lib -o timetest
 
 clean:
 	rm -f ${EXECS}
